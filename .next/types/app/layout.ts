@@ -1,4 +1,4 @@
-// File: D:\Others\DMS_inquiries_UI\travel-inquiry-form (2)\app\layout.tsx
+// File: D:\Others\International-Customer-Inquiry\app\layout.tsx
 import * as entry from '../../../app/layout.js'
 import type { ResolvingMetadata, ResolvingViewport } from 'next/dist/lib/metadata/types/metadata-interface.js'
 
