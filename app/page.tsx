@@ -76,7 +76,13 @@ export default function InquiryForm() {
         "Arrival Flight",
         "Departure Flight",
       ],
-      required: ["Customer Name", "Customer Email", "Customer Contact"],
+      required: [
+        "Customer Name",
+        "Customer Email",
+        "Customer Contact",
+        "Customer Nationality",
+        "Customer Country",
+      ],
     },
     {
       title: "Travel Dates",
@@ -96,14 +102,20 @@ export default function InquiryForm() {
         "No. of Rooms",
         "Basis",
       ],
-      required: ["Hotel Category", "Room type"],
+      required: [
+        "Hotel Category",
+        "Room Category",
+        "Room type",
+        "No. of Rooms",
+        "Basis",
+      ],
     },
     {
       title: "Group Details",
       description: "Tell us about your travel group",
       icon: <Users className="w-6 h-6" />,
       fields: ["No of pax", "Children"],
-      required: ["No of pax"],
+      required: ["No of pax", "Children"],
     },
     {
       title: "Experience & Services",
@@ -117,8 +129,38 @@ export default function InquiryForm() {
         "Special Arrangements",
         "Special Days",
       ],
+      required: [
+        "Tour type",
+        "Transport",
+        "Site / Interests",
+        "Other service",
+        "Special Arrangements",
+        "Special Days",
+      ],
     },
   ];
+
+  const isFormValid = () => {
+    const allRequiredFields = sections.flatMap(
+      (section) => section.required || []
+    );
+    for (const field of allRequiredFields) {
+      const value = formData[field];
+      if (
+        !value ||
+        (Array.isArray(value) && value.length === 0) ||
+        (typeof value === "string" && value.trim() === "")
+      ) {
+        return false;
+      }
+    }
+    for (const key in errors) {
+      if (errors[key]) {
+        return false;
+      }
+    }
+    return true;
+  };
 
   // Define Flight Details fields and icon for rendering under Travel Dates
   const flightDetails = {
@@ -582,7 +624,7 @@ export default function InquiryForm() {
                                 {field}
                               </label>
                               <div className="p-2 bg-gray-100 rounded-md text-lg font-semibold">
-                                {formData[field] || "0"}
+                                {String(formData[field] || "0")}
                               </div>
                             </div>
                           );
@@ -783,6 +825,7 @@ export default function InquiryForm() {
                   <Button
                     type="submit"
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                    disabled={!isFormValid()}
                   >
                     <Save className="mr-2 h-4 w-4" />
                     Submit Inquiry
