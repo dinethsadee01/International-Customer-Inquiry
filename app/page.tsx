@@ -350,8 +350,14 @@ export default function InquiryForm() {
 
   // Validation
   const validateField = (field: string, value: string) => {
-    // General required check
-    if (!value || (typeof value === "string" && value.trim() === "")) {
+    const allRequiredFields = sections.flatMap(
+      (section) => section.required || []
+    );
+    // General required check - only for required fields
+    if (
+      allRequiredFields.includes(field) &&
+      (!value || (typeof value === "string" && value.trim() === ""))
+    ) {
       return `${field} is required`;
     }
     // Field-specific validation
@@ -379,7 +385,7 @@ export default function InquiryForm() {
         break;
       case "Arrival Flight":
       case "Departure Flight":
-        if (typeof value === "string" && value.trim().length < 3) {
+        if (value && typeof value === "string" && value.trim().length < 3) {
           return `Please enter a valid ${field.toLowerCase()}`;
         }
         break;
