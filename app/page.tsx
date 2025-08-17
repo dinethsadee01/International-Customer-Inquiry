@@ -154,6 +154,15 @@ export default function InquiryForm() {
         return false;
       }
     }
+    // Add conditional check for "Other Hotel Category"
+    if (
+      formData["Hotel Category"] === "Other" &&
+      (!formData["Other Hotel Category"] ||
+        (typeof formData["Other Hotel Category"] === "string" &&
+          (formData["Other Hotel Category"] as string).trim() === ""))
+    ) {
+      return false;
+    }
     for (const key in errors) {
       if (errors[key]) {
         return false;
@@ -232,6 +241,10 @@ export default function InquiryForm() {
       icon: <Hotel size={18} />,
       options: ["5 Star", "4 Star", "Boutique Villas", "Other"],
       help: "Select your preferred accommodation standard",
+    },
+    "Other Hotel Category": {
+      type: "text",
+      placeholder: "Please specify",
     },
     "Room Category": {
       type: "select",
@@ -360,6 +373,13 @@ export default function InquiryForm() {
     ) {
       return `${field} is required`;
     }
+    if (
+      field === "Other Hotel Category" &&
+      formData["Hotel Category"] === "Other" &&
+      (!value || (typeof value === "string" && value.trim() === ""))
+    ) {
+      return "Please specify the hotel category";
+    }
     // Field-specific validation
     switch (field) {
       case "Customer Email":
@@ -441,7 +461,10 @@ export default function InquiryForm() {
       no_of_nights: formData["No. of Nights"]
         ? Number(formData["No. of Nights"])
         : null,
-      hotel_category: formData["Hotel Category"] || "",
+      hotel_category:
+        formData["Hotel Category"] === "Other"
+          ? `Other: ${formData["Other Hotel Category"]}`
+          : (formData["Hotel Category"] as string) || "",
       room_category: formData["Room Category"] || "",
       room_type: formData["Room type"] || "",
       no_of_rooms:
@@ -527,6 +550,9 @@ export default function InquiryForm() {
     fieldsToClear.forEach((field) => {
       delete newFormData[field];
     });
+    if (fieldsToClear.includes("Hotel Category")) {
+      delete newFormData["Other Hotel Category"];
+    }
 
     if (
       fieldsToClear.includes("Arrival Date") ||
@@ -638,47 +664,84 @@ export default function InquiryForm() {
 
                         if (config.type === "select") {
                           return (
-                            <div key={field} className="space-y-2">
-                              <label className="text-sm font-medium text-gray-700">
-                                {field}
-                              </label>
-                              <Select
-                                onValueChange={(val) =>
-                                  handleFieldChange(field, val)
-                                }
-                                value={typeof value === "string" ? value : ""}
-                              >
-                                <SelectTrigger
-                                  className={`${
-                                    showError
-                                      ? "border-red-500"
-                                      : value && value !== "" && !showError
-                                      ? "border-green-500"
-                                      : "border-gray-300"
-                                  }`}
+                            <React.Fragment key={field}>
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700">
+                                  {field}
+                                </label>
+                                <Select
+                                  onValueChange={(val) =>
+                                    handleFieldChange(field, val)
+                                  }
+                                  value={typeof value === "string" ? value : ""}
                                 >
-                                  <SelectValue
-                                    placeholder={
-                                      config.placeholder ||
-                                      "Choose an option..."
-                                    }
-                                  />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {config.options &&
-                                    config.options.map((option: string) => (
-                                      <SelectItem key={option} value={option}>
-                                        {option}
-                                      </SelectItem>
-                                    ))}
-                                </SelectContent>
-                              </Select>
-                              {showError && (
-                                <div className="flex items-center gap-1 text-red-500 text-sm">
-                                  {errorMsg}
-                                </div>
-                              )}
-                            </div>
+                                  <SelectTrigger
+                                    className={`${
+                                      showError
+                                        ? "border-red-500"
+                                        : value && value !== "" && !showError
+                                        ? "border-green-500"
+                                        : "border-gray-300"
+                                    }`}
+                                  >
+                                    <SelectValue
+                                      className="text-gray-700"
+                                      placeholder={
+                                        config.placeholder ||
+                                        "Choose an option..."
+                                      }
+                                    />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {config.options &&
+                                      config.options.map((option: string) => (
+                                        <SelectItem key={option} value={option}>
+                                          {option}
+                                        </SelectItem>
+                                      ))}
+                                  </SelectContent>
+                                </Select>
+                                {showError && (
+                                  <div className="flex items-center gap-1 text-red-500 text-sm">
+                                    {errorMsg}
+                                  </div>
+                                )}
+                              </div>
+                              {field === "Hotel Category" &&
+                                value === "Other" && (
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-700">
+                                      Specify Other
+                                    </label>
+                                    <Input
+                                      placeholder="Please specify"
+                                      onChange={(e) =>
+                                        handleFieldChange(
+                                          "Other Hotel Category",
+                                          e.target.value
+                                        )
+                                      }
+                                      value={
+                                        (formData[
+                                          "Other Hotel Category"
+                                        ] as string) || ""
+                                      }
+                                      className={`${
+                                        errors["Other Hotel Category"]
+                                          ? "border-red-500"
+                                          : formData["Other Hotel Category"]
+                                          ? "border-green-500"
+                                          : "border-gray-300"
+                                      }`}
+                                    />
+                                    {errors["Other Hotel Category"] && (
+                                      <div className="flex items-center gap-1 text-red-500 text-sm">
+                                        {errors["Other Hotel Category"]}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
+                            </React.Fragment>
                           );
                         } else if (config.type === "date") {
                           return (
