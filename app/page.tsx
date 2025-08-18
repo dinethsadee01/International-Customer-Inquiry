@@ -41,7 +41,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { RoomSelector } from "@/components/ui/room-selector";
 import { supabase } from "@/lib/supabase"; // Import the Supabase client
 
-type FormData = Record<string, string | string[] | Record<string, number>>;
+type FormData = Record<
+  string,
+  string | string[] | Record<string, number> | RoomSelection[]
+>;
+
+interface RoomSelection {
+  category: string;
+  type: string;
+  quantity: number;
+}
 
 interface FormSection {
   title: string;
@@ -95,20 +104,8 @@ export default function InquiryForm() {
       title: "Accommodation",
       description: "Choose your perfect stay",
       icon: <Hotel className="w-6 h-6" />,
-      fields: [
-        "Hotel Category",
-        "Room Category",
-        "Room type",
-        "No. of Rooms",
-        "Basis",
-      ],
-      required: [
-        "Hotel Category",
-        "Room Category",
-        "Room type",
-        "No. of Rooms",
-        "Basis",
-      ],
+      fields: ["Hotel Category", "Room Selection", "Basis"],
+      required: ["Hotel Category", "Room Selection", "Basis"],
     },
     {
       title: "Group Details",
@@ -146,7 +143,19 @@ export default function InquiryForm() {
     );
     for (const field of allRequiredFields) {
       const value = formData[field];
-      if (
+      if (field === "Room Selection") {
+        // Check if room selection has at least one valid room
+        if (!Array.isArray(value) || value.length === 0) {
+          return false;
+        }
+        const rooms = value as RoomSelection[];
+        const hasValidRoom = rooms.some(
+          (room) => room.category && room.type && room.quantity > 0
+        );
+        if (!hasValidRoom) {
+          return false;
+        }
+      } else if (
         !value ||
         (Array.isArray(value) && value.length === 0) ||
         (typeof value === "string" && value.trim() === "")
@@ -244,23 +253,14 @@ export default function InquiryForm() {
     },
     "Other Hotel Category": {
       type: "text",
-      placeholder: "Please specify",
+      placeholder: "Please specify the Hotel Category type",
     },
-    "Room Category": {
-      type: "select",
+    "Room Selection": {
+      type: "room-selector",
       icon: <BedDouble size={18} />,
-      options: ["Standard", "Deluxe", "Superior", "Luxury", "Suite"],
-    },
-    "Room type": {
-      type: "select",
-      icon: <BedDouble size={18} />,
-      options: ["SGL", "DBL", "TRIP", "QTRP"],
-      help: "SGL=Single, DBL=Double, TRIP=Triple, QTRP=Quadruple",
-    },
-    "No. of Rooms": {
-      type: "select",
-      icon: <Users size={18} />,
-      options: ["01 DBL", "01 SGL", "2 TRIPL", "1 Suite", "1 QTRP"],
+      roomCategories: ["Standard", "Deluxe", "Superior", "Luxury", "Suite"],
+      roomTypes: ["SGL", "DBL", "TRIP", "QTRP"],
+      help: "Select your room combinations - Category, Type, and Quantity",
     },
     Basis: {
       type: "select",
@@ -417,15 +417,47 @@ export default function InquiryForm() {
 
   const handleFieldChange = (
     field: string,
-    value: string | string[] | Record<string, number>
+    value: string | string[] | Record<string, number> | RoomSelection[]
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Validate on change
     let error = "";
-    if (typeof value === "string" || Array.isArray(value)) {
+    if (field === "Room Selection") {
+      // Special handling for room selection validation
+      const rooms = Array.isArray(value) ? (value as RoomSelection[]) : [];
+      if (rooms.length === 0) {
+        error = "Please add at least one room";
+      } else {
+        const hasInvalidRoom = rooms.some(
+          (room) => !room.category || !room.type || room.quantity <= 0
+        );
+        if (hasInvalidRoom) {
+          error = "Please fill all room details";
+        } else {
+          // Check for duplicate room combinations
+          const roomCombinations = new Map<string, number>();
+          for (let i = 0; i < rooms.length; i++) {
+            const room = rooms[i];
+            if (room.category && room.type) {
+              const combination = `${room.category}-${room.type}`;
+              if (roomCombinations.has(combination)) {
+                error = `Duplicate room combination: ${room.category} ${room.type}. Increase quantity instead of adding the same room type multiple times.`;
+                break;
+              }
+              roomCombinations.set(combination, i);
+            }
+          }
+        }
+      }
+    } else if (
+      typeof value === "string" ||
+      (Array.isArray(value) && typeof value[0] === "string")
+    ) {
       error = validateField(
         field,
-        Array.isArray(value) ? value.join(", ") : value
+        Array.isArray(value)
+          ? (value as string[]).join(", ")
+          : (value as string)
       );
     }
     setErrors((prev) => ({ ...prev, [field]: error }));
@@ -465,12 +497,9 @@ export default function InquiryForm() {
         formData["Hotel Category"] === "Other"
           ? `Other: ${formData["Other Hotel Category"]}`
           : (formData["Hotel Category"] as string) || "",
-      room_category: formData["Room Category"] || "",
-      room_type: formData["Room type"] || "",
-      no_of_rooms:
-        typeof formData["No. of Rooms"] === "object"
-          ? JSON.stringify(formData["No. of Rooms"])
-          : formData["No. of Rooms"] || "",
+      room_type: Array.isArray(formData["Room Selection"])
+        ? JSON.stringify(formData["Room Selection"])
+        : JSON.stringify([]),
       basis: formData["Basis"] || "",
       no_of_pax: formData["No of pax"] ? Number(formData["No of pax"]) : null,
       children: formData["Children"] || "",
@@ -711,10 +740,10 @@ export default function InquiryForm() {
                                 value === "Other" && (
                                   <div className="space-y-2">
                                     <label className="text-sm font-medium text-gray-700">
-                                      Specify Other
+                                      Specify Other Hotel Category
                                     </label>
                                     <Input
-                                      placeholder="Please specify"
+                                      placeholder="Please specify the Hotel Category type"
                                       onChange={(e) =>
                                         handleFieldChange(
                                           "Other Hotel Category",
@@ -784,7 +813,10 @@ export default function InquiryForm() {
                             </div>
                           );
                         } else if (config.type === "multiselect") {
-                          const selected = Array.isArray(value) ? value : [];
+                          const selected =
+                            Array.isArray(value) && typeof value[0] === "string"
+                              ? (value as string[])
+                              : [];
                           return (
                             <div key={field} className="space-y-2">
                               <label className="text-sm font-medium text-gray-700">
@@ -802,7 +834,7 @@ export default function InquiryForm() {
                                         className="form-checkbox h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
                                         checked={selected.includes(option)}
                                         onChange={() => {
-                                          let newSelected;
+                                          let newSelected: string[];
                                           if (selected.includes(option)) {
                                             newSelected = selected.filter(
                                               (o: string) => o !== option
@@ -816,6 +848,171 @@ export default function InquiryForm() {
                                       <span>{option}</span>
                                     </label>
                                   ))}
+                              </div>
+                              {showError && (
+                                <div className="flex items-center gap-1 text-red-500 text-sm">
+                                  {errorMsg}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        } else if (config.type === "room-selector") {
+                          const roomSelections =
+                            Array.isArray(value) && typeof value[0] === "object"
+                              ? (value as RoomSelection[])
+                              : [];
+
+                          const addRoom = () => {
+                            const newRooms: RoomSelection[] = [
+                              ...roomSelections,
+                              { category: "", type: "", quantity: 1 },
+                            ];
+                            handleFieldChange(field, newRooms);
+                          };
+
+                          const removeRoom = (index: number) => {
+                            const newRooms = roomSelections.filter(
+                              (_, i) => i !== index
+                            );
+                            handleFieldChange(field, newRooms);
+                          };
+
+                          const updateRoom = (
+                            index: number,
+                            key: keyof RoomSelection,
+                            val: any
+                          ) => {
+                            const newRooms = [...roomSelections];
+                            const room = newRooms[index];
+                            if (room) {
+                              newRooms[index] = { ...room, [key]: val };
+                              handleFieldChange(field, newRooms);
+                            }
+                          };
+
+                          return (
+                            <div
+                              key={field}
+                              className="space-y-2 md:col-span-2"
+                            >
+                              <label className="text-sm font-medium text-gray-700">
+                                {field}
+                                <span className="text-xs text-gray-500 ml-2">
+                                  {config.help}
+                                </span>
+                              </label>
+                              <div
+                                className={`space-y-3 p-4 border rounded-md ${
+                                  showError
+                                    ? "border-red-500"
+                                    : value &&
+                                      Array.isArray(value) &&
+                                      value.length > 0 &&
+                                      !showError
+                                    ? "border-green-500"
+                                    : "border-gray-300"
+                                }`}
+                              >
+                                {roomSelections.map(
+                                  (room: RoomSelection, index: number) => (
+                                    <div
+                                      key={index}
+                                      className="flex gap-3 items-end"
+                                    >
+                                      <div className="flex-1">
+                                        <label className="text-xs text-gray-600">
+                                          Category
+                                        </label>
+                                        <Select
+                                          onValueChange={(val) =>
+                                            updateRoom(index, "category", val)
+                                          }
+                                          value={room.category || ""}
+                                        >
+                                          <SelectTrigger className="h-9">
+                                            <SelectValue placeholder="Category" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {config.roomCategories?.map(
+                                              (category: string) => (
+                                                <SelectItem
+                                                  key={category}
+                                                  value={category}
+                                                >
+                                                  {category}
+                                                </SelectItem>
+                                              )
+                                            )}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <div className="flex-1">
+                                        <label className="text-xs text-gray-600">
+                                          Type
+                                        </label>
+                                        <Select
+                                          onValueChange={(val) =>
+                                            updateRoom(index, "type", val)
+                                          }
+                                          value={room.type || ""}
+                                        >
+                                          <SelectTrigger className="h-9">
+                                            <SelectValue placeholder="Type" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                            {config.roomTypes?.map(
+                                              (type: string) => (
+                                                <SelectItem
+                                                  key={type}
+                                                  value={type}
+                                                >
+                                                  {type}
+                                                </SelectItem>
+                                              )
+                                            )}
+                                          </SelectContent>
+                                        </Select>
+                                      </div>
+                                      <div className="w-20">
+                                        <label className="text-xs text-gray-600">
+                                          Qty
+                                        </label>
+                                        <Input
+                                          type="number"
+                                          min="1"
+                                          max="10"
+                                          value={room.quantity || 1}
+                                          onChange={(e) =>
+                                            updateRoom(
+                                              index,
+                                              "quantity",
+                                              parseInt(e.target.value) || 1
+                                            )
+                                          }
+                                          className="h-9"
+                                        />
+                                      </div>
+                                      <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() => removeRoom(index)}
+                                        className="h-9 px-2"
+                                        disabled={roomSelections.length === 1}
+                                      >
+                                        Remove
+                                      </Button>
+                                    </div>
+                                  )
+                                )}
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  onClick={addRoom}
+                                  className="w-full"
+                                >
+                                  + Add Another Room
+                                </Button>
                               </div>
                               {showError && (
                                 <div className="flex items-center gap-1 text-red-500 text-sm">
