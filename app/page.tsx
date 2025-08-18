@@ -124,7 +124,6 @@ export default function InquiryForm() {
         "Site / Interests",
         "Other service",
         "Special Arrangements",
-        "Special Days",
       ],
       required: [
         "Tour type",
@@ -132,7 +131,6 @@ export default function InquiryForm() {
         "Site / Interests",
         "Other service",
         "Special Arrangements",
-        "Special Days",
       ],
     },
   ];
@@ -291,7 +289,7 @@ export default function InquiryForm() {
       ],
     },
     "Other service": {
-      type: "select",
+      type: "multiselect",
       icon: <Car size={18} />,
       options: [
         "None",
@@ -299,8 +297,8 @@ export default function InquiryForm() {
         "Boat Service",
         "Train Rides",
         "Village Tours",
-        "Other",
       ],
+      allowCustom: true,
     },
     "No of pax": {
       type: "text",
@@ -311,19 +309,6 @@ export default function InquiryForm() {
       type: "select",
       icon: <Gift size={18} />,
       options: ["None", "B'Day", "Anniversary", "Engagement", "Wedding"],
-    },
-    "Special Days": {
-      type: "select",
-      icon: <CalendarCheck size={18} />,
-      options: [
-        "None",
-        "24 Dec - X'mas",
-        "31 Night",
-        "Peak Season - Nov/Mar",
-        "High Peak Season - 20 Dec/10 Jan",
-        "Low Season - April/Oct",
-        "Perahera Season - Jul/Aug",
-      ],
     },
   };
 
@@ -512,7 +497,6 @@ export default function InquiryForm() {
         : null,
       other_service: formData["Other service"] || "",
       special_arrangements: formData["Special Arrangements"] || "",
-      special_days: formData["Special Days"] || "",
       arrival_flight: formData["Arrival Flight"] || "",
       departure_flight: formData["Departure Flight"] || "",
     };
@@ -848,7 +832,82 @@ export default function InquiryForm() {
                                       <span>{option}</span>
                                     </label>
                                   ))}
+                                {/* Show custom options that aren't in the predefined list */}
+                                {selected
+                                  .filter(
+                                    (item) => !config.options?.includes(item)
+                                  )
+                                  .map((customOption: string) => (
+                                    <label
+                                      key={customOption}
+                                      className="flex items-center gap-2 p-2 rounded-md hover:bg-gray-100 cursor-pointer bg-blue-50"
+                                    >
+                                      <input
+                                        type="checkbox"
+                                        className="form-checkbox h-4 w-4 text-green-600 border-gray-300 rounded focus:ring-green-500"
+                                        checked={true}
+                                        onChange={() => {
+                                          const newSelected = selected.filter(
+                                            (o: string) => o !== customOption
+                                          );
+                                          handleFieldChange(field, newSelected);
+                                        }}
+                                      />
+                                      <span className="text-green-700">
+                                        {customOption}
+                                      </span>
+                                    </label>
+                                  ))}
                               </div>
+                              {/* Add custom option input if allowCustom is true */}
+                              {config.allowCustom && (
+                                <div className="flex gap-2">
+                                  <Input
+                                    placeholder="Add custom service..."
+                                    onKeyDown={(e) => {
+                                      if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        const customValue =
+                                          e.currentTarget.value.trim();
+                                        if (
+                                          customValue &&
+                                          !selected.includes(customValue)
+                                        ) {
+                                          const newSelected = [
+                                            ...selected,
+                                            customValue,
+                                          ];
+                                          handleFieldChange(field, newSelected);
+                                          e.currentTarget.value = "";
+                                        }
+                                      }
+                                    }}
+                                    className="flex-1"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={(e) => {
+                                      const input = e.currentTarget
+                                        .previousElementSibling as HTMLInputElement;
+                                      const customValue = input.value.trim();
+                                      if (
+                                        customValue &&
+                                        !selected.includes(customValue)
+                                      ) {
+                                        const newSelected = [
+                                          ...selected,
+                                          customValue,
+                                        ];
+                                        handleFieldChange(field, newSelected);
+                                        input.value = "";
+                                      }
+                                    }}
+                                  >
+                                    Add
+                                  </Button>
+                                </div>
+                              )}
                               {showError && (
                                 <div className="flex items-center gap-1 text-red-500 text-sm">
                                   {errorMsg}
