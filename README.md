@@ -362,7 +362,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 If you have any questions or need support:
 
-- 📧 **Email**: [your-email@example.com](mailto:your-email@example.com)
+- 📧 **Email**: [dnext20002gmail.com](mailto:dnext20002gmail.com)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/dinethsadee01/International-Customer-Inquiry/issues)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/dinethsadee01/International-Customer-Inquiry/discussions)
 
@@ -376,6 +376,6 @@ If this project helped you, consider buying me a coffee! Your support helps keep
 
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support%20Project-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/grandwarlock)
 
-Made with ❤️ by [Dineth Sadee](https://github.com/dinethsadee01)
+Made with ❤️ by [Dineth Sadeepa](https://github.com/dinethsadee01)
 
 </div>
