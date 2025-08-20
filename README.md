@@ -4,7 +4,26 @@
 
 ![Travel Planning](https://img.shields.io/badge/Travel-Planning-blue?style=for-the-badge&logo=airplane&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Next.js-15.2.4-black?style=for-the-badge&logo=next.js&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0## 📞 Support
+
+If you have any questions or need support:
+
+- 📧 **Email**: [your-email@example.com](mailto:your-email@example.com)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/dinethsadee01/International-Customer-Inquiry/issues)
+- 💬 **Discussions**: [GitHub Discussions](https://github.com/dinethsadee01/International-Customer-Inquiry/discussions)
+
+### ☕ **Support the Project**
+
+If this project helped you, consider buying me a coffee! Your support helps keep this project alive and growing.
+
+<div align="center">
+
+[![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support%20Project-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/grandwarlock)
+
+<!-- Buy Me a Coffee Button (HTML) -->
+<script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="grandwarlock" data-color="#FFDD00" data-emoji="☕"  data-font="Lato" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script>
+
+</div>tyle=for-the-badge&logo=typescript&logoColor=white)
 ![Supabase](https://img.shields.io/badge/Supabase-Database-green?style=for-the-badge&logo=supabase&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4.17-38B2AC?style=for-the-badge&logo=tailwind-css&logoColor=white)
 
@@ -362,7 +381,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 If you have any questions or need support:
 
-- 📧 **Email**: [your-email@example.com](mailto:your-email@example.com)
+- 📧 **Email**: [dnext2000@gmail.com](mailto:dnext2000@gmail.com)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/dinethsadee01/International-Customer-Inquiry/issues)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/dinethsadee01/International-Customer-Inquiry/discussions)
 
@@ -372,6 +391,6 @@ If you have any questions or need support:
 
 **⭐ If you found this project helpful, please consider giving it a star! ⭐**
 
-Made with ❤️ by [Dineth Sadee](https://github.com/dinethsadee01)
+Made with ❤️ by [Dineth Sadeepa](https://github.com/dinethsadee01)
 
 </div>
