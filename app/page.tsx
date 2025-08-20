@@ -170,6 +170,16 @@ export default function InquiryForm() {
     ) {
       return false;
     }
+    // Add conditional check for "Special Arrangements Date"
+    if (
+      formData["Special Arrangements"] &&
+      formData["Special Arrangements"] !== "None" &&
+      (!formData["Special Arrangements Date"] ||
+        (typeof formData["Special Arrangements Date"] === "string" &&
+          (formData["Special Arrangements Date"] as string).trim() === ""))
+    ) {
+      return false;
+    }
     for (const key in errors) {
       if (errors[key]) {
         return false;
@@ -258,7 +268,7 @@ export default function InquiryForm() {
       icon: <BedDouble size={18} />,
       roomCategories: ["Standard", "Deluxe", "Superior", "Luxury", "Suite"],
       roomTypes: ["SGL", "DBL", "TRIP", "QTRP"],
-      help: "Select your room combinations - Category, Type, and Quantity",
+      help: "(Select your room combinations - Category, Type, and Quantity)",
     },
     Basis: {
       type: "select",
@@ -298,6 +308,7 @@ export default function InquiryForm() {
         "Train Rides",
         "Village Tours",
       ],
+      help: "(Select 'None' if no additional services are needed)",
       allowCustom: true,
     },
     "No of pax": {
@@ -309,6 +320,11 @@ export default function InquiryForm() {
       type: "select",
       icon: <Gift size={18} />,
       options: ["None", "B'Day", "Anniversary", "Engagement", "Wedding"],
+    },
+    "Special Arrangements Date": {
+      type: "date",
+      icon: <CalendarPlus size={18} />,
+      placeholder: "Select date for the special arrangement",
     },
   };
 
@@ -359,11 +375,12 @@ export default function InquiryForm() {
       return `${field} is required`;
     }
     if (
-      field === "Other Hotel Category" &&
-      formData["Hotel Category"] === "Other" &&
+      field === "Special Arrangements Date" &&
+      formData["Special Arrangements"] &&
+      formData["Special Arrangements"] !== "None" &&
       (!value || (typeof value === "string" && value.trim() === ""))
     ) {
-      return "Please specify the hotel category";
+      return "Please specify the date for the special arrangement";
     }
     // Field-specific validation
     switch (field) {
@@ -379,6 +396,7 @@ export default function InquiryForm() {
         break;
       case "Arrival Date":
       case "Departure Date":
+      case "Special Arrangements Date":
         if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
           return "Please select a valid date";
         }
@@ -405,6 +423,25 @@ export default function InquiryForm() {
     value: string | string[] | Record<string, number> | RoomSelection[]
   ) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+
+    // Clear Special Arrangements Date if Special Arrangements is set to "None"
+    if (field === "Special Arrangements" && value === "None") {
+      setFormData((prev) => {
+        const newData = { ...prev };
+        delete newData["Special Arrangements Date"];
+        return newData;
+      });
+      setDates((prev) => ({
+        ...prev,
+        "Special Arrangements Date": null,
+      }));
+      setErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors["Special Arrangements Date"];
+        return newErrors;
+      });
+    }
+
     // Validate on change
     let error = "";
     if (field === "Room Selection") {
@@ -453,12 +490,8 @@ export default function InquiryForm() {
     event.preventDefault();
     setHasSubmitted(true);
 
-    // Prevent submit if any field in the form is empty (only those actually rendered)
-    if (
-      sections
-        .flatMap((section) => section.fields)
-        .some((field) => !formData[field] || formData[field] === "")
-    ) {
+    // Check if form is valid before submitting
+    if (!isFormValid()) {
       return;
     }
 
@@ -471,12 +504,12 @@ export default function InquiryForm() {
       country: formData["Customer Country"] || "",
       arrival_date: dates["Arrival Date"]
         ? dates["Arrival Date"].toISOString()
-        : "",
+        : null,
       departure_date: dates["Departure Date"]
         ? dates["Departure Date"].toISOString()
-        : "",
+        : null,
       no_of_nights: formData["No. of Nights"]
-        ? Number(formData["No. of Nights"])
+        ? parseInt(formData["No. of Nights"] as string) || 0
         : null,
       hotel_category:
         formData["Hotel Category"] === "Other"
@@ -486,7 +519,9 @@ export default function InquiryForm() {
         ? JSON.stringify(formData["Room Selection"])
         : JSON.stringify([]),
       basis: formData["Basis"] || "",
-      no_of_pax: formData["No of pax"] ? Number(formData["No of pax"]) : null,
+      no_of_pax: formData["No of pax"]
+        ? parseInt(formData["No of pax"] as string) || 0
+        : null,
       children: formData["Children"] || "",
       tour_type: formData["Tour type"] || "",
       transport: formData["Transport"] || "",
@@ -495,11 +530,25 @@ export default function InquiryForm() {
         : formData["Site / Interests"]
         ? [formData["Site / Interests"]]
         : null,
-      other_service: formData["Other service"] || "",
+      other_service: Array.isArray(formData["Other service"])
+        ? (formData["Other service"] as string[]).includes("None")
+          ? ["None"]
+          : formData["Other service"]
+        : formData["Other service"]
+        ? [formData["Other service"]]
+        : ["None"],
       special_arrangements: formData["Special Arrangements"] || "",
+      special_arrangements_date: dates["Special Arrangements Date"]
+        ? dates["Special Arrangements Date"].toISOString()
+        : null,
       arrival_flight: formData["Arrival Flight"] || "",
       departure_flight: formData["Departure Flight"] || "",
     };
+
+    // Log the data being sent for debugging
+    console.log("Form data being submitted:", formData);
+    console.log("Dates being submitted:", dates);
+    console.log("Client data for database:", clientData);
 
     // List of required fields (update to match your Supabase schema)
     const requiredFields = [
@@ -513,8 +562,15 @@ export default function InquiryForm() {
     // Validate all required fields and set errors
     const newErrors: Record<string, string> = {};
     requiredFields.forEach((field) => {
-      if (!clientData[field] || clientData[field] === "") {
-        newErrors[field] = `${field.replace(/_/g, " ")} is required`;
+      if (
+        !clientData[field] ||
+        clientData[field] === "" ||
+        clientData[field] === null
+      ) {
+        const fieldName = field
+          .replace(/_/g, " ")
+          .replace(/\b\w/g, (l) => l.toUpperCase());
+        newErrors[field] = `${fieldName} is required`;
       }
     });
     setErrors(newErrors);
@@ -544,9 +600,13 @@ export default function InquiryForm() {
     } else if (data && data.length > 0) {
       console.log("Client inquiry saved successfully:", data);
       alert("Client inquiry saved successfully!");
-      // Optionally reset form here
+      // Reset form completely
       setFormData({});
-      setDates({ "Arrival Date": null, "Departure Date": null });
+      setDates({
+        "Arrival Date": null,
+        "Departure Date": null,
+        "Special Arrangements Date": null,
+      });
       setCurrentSection(0);
       setHasSubmitted(false);
       setErrors({});
@@ -566,16 +626,22 @@ export default function InquiryForm() {
     if (fieldsToClear.includes("Hotel Category")) {
       delete newFormData["Other Hotel Category"];
     }
+    if (fieldsToClear.includes("Special Arrangements")) {
+      delete newFormData["Special Arrangements Date"];
+    }
 
     if (
       fieldsToClear.includes("Arrival Date") ||
-      fieldsToClear.includes("Departure Date")
+      fieldsToClear.includes("Departure Date") ||
+      fieldsToClear.includes("Special Arrangements")
     ) {
       const newDates = { ...dates };
       if (fieldsToClear.includes("Arrival Date"))
         newDates["Arrival Date"] = null;
       if (fieldsToClear.includes("Departure Date"))
         newDates["Departure Date"] = null;
+      if (fieldsToClear.includes("Special Arrangements"))
+        newDates["Special Arrangements Date"] = null;
       setDates(newDates);
     }
 
@@ -585,6 +651,12 @@ export default function InquiryForm() {
     fieldsToClear.forEach((field) => {
       delete newErrors[field];
     });
+    if (fieldsToClear.includes("Hotel Category")) {
+      delete newErrors["Other Hotel Category"];
+    }
+    if (fieldsToClear.includes("Special Arrangements")) {
+      delete newErrors["Special Arrangements Date"];
+    }
     setErrors(newErrors);
   };
 
@@ -754,6 +826,51 @@ export default function InquiryForm() {
                                     )}
                                   </div>
                                 )}
+                              {field === "Special Arrangements" &&
+                                value !== "None" &&
+                                value && (
+                                  <div className="space-y-2">
+                                    <label className="text-sm font-medium text-gray-700">
+                                      Date of {String(value)}
+                                    </label>
+                                    <Input
+                                      type="date"
+                                      placeholder="Select date for the special arrangement"
+                                      onChange={(e) => {
+                                        handleFieldChange(
+                                          "Special Arrangements Date",
+                                          e.target.value
+                                        );
+                                        setDates((prev) => ({
+                                          ...prev,
+                                          "Special Arrangements Date": e.target
+                                            .value
+                                            ? new Date(e.target.value)
+                                            : null,
+                                        }));
+                                      }}
+                                      value={
+                                        (formData[
+                                          "Special Arrangements Date"
+                                        ] as string) || ""
+                                      }
+                                      className={`${
+                                        errors["Special Arrangements Date"]
+                                          ? "border-red-500"
+                                          : formData[
+                                              "Special Arrangements Date"
+                                            ]
+                                          ? "border-green-500"
+                                          : "border-gray-300"
+                                      }`}
+                                    />
+                                    {errors["Special Arrangements Date"] && (
+                                      <div className="flex items-center gap-1 text-red-500 text-sm">
+                                        {errors["Special Arrangements Date"]}
+                                      </div>
+                                    )}
+                                  </div>
+                                )}
                             </React.Fragment>
                           );
                         } else if (config.type === "date") {
@@ -805,6 +922,9 @@ export default function InquiryForm() {
                             <div key={field} className="space-y-2">
                               <label className="text-sm font-medium text-gray-700">
                                 {field}
+                                <span className="text-xs text-gray-500 ml-2">
+                                  {config.help}
+                                </span>
                               </label>
                               <div className="flex flex-wrap gap-2 p-2 border rounded-md">
                                 {config.options &&
@@ -829,7 +949,7 @@ export default function InquiryForm() {
                                           handleFieldChange(field, newSelected);
                                         }}
                                       />
-                                      <span>{option}</span>
+                                      <span className="text-sm">{option}</span>
                                     </label>
                                   ))}
                                 {/* Show custom options that aren't in the predefined list */}
@@ -853,7 +973,7 @@ export default function InquiryForm() {
                                           handleFieldChange(field, newSelected);
                                         }}
                                       />
-                                      <span className="text-green-700">
+                                      <span className="text-sm text-green-700">
                                         {customOption}
                                       </span>
                                     </label>
