@@ -377,7 +377,10 @@ If this project helped you, consider buying me a coffee! Your support helps keep
 [![Buy Me A Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-Support%20Project-FFDD00?style=for-the-badge&logo=buy-me-a-coffee&logoColor=black)](https://www.buymeacoffee.com/grandwarlock)
 
 <!-- Buy Me a Coffee Button (HTML) -->
+
+```
 <script type="text/javascript" src="https://cdnjs.buymeacoffee.com/1.0.0/button.prod.min.js" data-name="bmc-button" data-slug="grandwarlock" data-color="#FFDD00" data-emoji="☕"  data-font="Lato" data-text="Buy me a coffee" data-outline-color="#000000" data-font-color="#000000" data-coffee-color="#ffffff" ></script>
+```
 
 Made with ❤️ by [Dineth Sadee](https://github.com/dinethsadee01)
 
