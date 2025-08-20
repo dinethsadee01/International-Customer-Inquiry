@@ -362,7 +362,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 If you have any questions or need support:
 
-- 📧 **Email**: [dnext20002gmail.com](mailto:dnext20002gmail.com)
+- 📧 **Email**: [dnext2000@gmail.com](mailto:dnext2000@gmail.com)
 - 🐛 **Issues**: [GitHub Issues](https://github.com/dinethsadee01/International-Customer-Inquiry/issues)
 - 💬 **Discussions**: [GitHub Discussions](https://github.com/dinethsadee01/International-Customer-Inquiry/discussions)
 
