@@ -13,9 +13,6 @@ import {
   Gift,
   Car,
   Sparkles,
-  CheckCircle,
-  AlertCircle,
-  Info,
   Save,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,18 +25,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
-} from "@/components/ui/popover";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { format, differenceInCalendarDays, addDays } from "date-fns";
+import { differenceInCalendarDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
-import { RoomSelector } from "@/components/ui/room-selector";
-import { supabase } from "@/lib/supabase"; // Import the Supabase client
+import { supabase } from "@/lib/supabase";
 
 type FormData = Record<
   string,
@@ -68,7 +56,6 @@ export default function InquiryForm() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [currentSection, setCurrentSection] = useState(0);
-  const [showCustomerDetails, setShowCustomerDetails] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const sections: FormSection[] = [
@@ -188,12 +175,6 @@ export default function InquiryForm() {
     return true;
   };
 
-  // Define Flight Details fields and icon for rendering under Travel Dates
-  const flightDetails = {
-    icon: <Plane className="w-6 h-6" />,
-    fields: ["Arrival Flight", "Departure Flight"],
-  };
-
   const fieldConfig: Record<string, any> = {
     "Customer Name": {
       type: "text",
@@ -308,7 +289,7 @@ export default function InquiryForm() {
         "Train Rides",
         "Village Tours",
       ],
-      help: "(Select 'None' if no additional services are needed)",
+      help: "Select 'None' only if no additional services are needed.",
       allowCustom: true,
     },
     "No of pax": {
@@ -328,12 +309,12 @@ export default function InquiryForm() {
     },
   };
 
-  // Calculate progress
-  const totalFields = Object.keys(fieldConfig).length;
-  const completedFields = Object.keys(formData).filter(
-    (key) => formData[key] && formData[key] !== ""
-  ).length;
-  const progress = (completedFields / totalFields) * 100;
+  // Calculate progress for progress bars
+  // const totalFields = Object.keys(fieldConfig).length;
+  // const completedFields = Object.keys(formData).filter(
+  //   (key) => formData[key] && formData[key] !== ""
+  // ).length;
+  // const progress = (completedFields / totalFields) * 100;
 
   // Auto-calculate nights
   useEffect(() => {
@@ -490,128 +471,146 @@ export default function InquiryForm() {
     event.preventDefault();
     setHasSubmitted(true);
 
-    // Check if form is valid before submitting
-    if (!isFormValid()) {
-      return;
-    }
+    try {
+      // Prepare client data (convert undefined/null to empty string, arrays to comma-separated, objects to JSON)
+      const clientData: Record<string, any> = {
+        full_name: formData["Customer Name"] || "",
+        email_address: formData["Customer Email"] || "",
+        contact_number: formData["Customer Contact"] || "",
+        nationality: formData["Customer Nationality"] || "",
+        country: formData["Customer Country"] || "",
 
-    // Prepare client data (convert undefined/null to empty string, arrays to comma-separated, objects to JSON)
-    const clientData: Record<string, any> = {
-      full_name: formData["Customer Name"] || "",
-      email_address: formData["Customer Email"] || "",
-      contact_number: formData["Customer Contact"] || "",
-      nationality: formData["Customer Nationality"] || "",
-      country: formData["Customer Country"] || "",
-      arrival_date: dates["Arrival Date"]
-        ? dates["Arrival Date"].toISOString()
-        : null,
-      departure_date: dates["Departure Date"]
-        ? dates["Departure Date"].toISOString()
-        : null,
-      no_of_nights: formData["No. of Nights"]
-        ? parseInt(formData["No. of Nights"] as string) || 0
-        : null,
-      hotel_category:
-        formData["Hotel Category"] === "Other"
-          ? `Other: ${formData["Other Hotel Category"]}`
-          : (formData["Hotel Category"] as string) || "",
-      room_type: Array.isArray(formData["Room Selection"])
-        ? JSON.stringify(formData["Room Selection"])
-        : JSON.stringify([]),
-      basis: formData["Basis"] || "",
-      no_of_pax: formData["No of pax"]
-        ? parseInt(formData["No of pax"] as string) || 0
-        : null,
-      children: formData["Children"] || "",
-      tour_type: formData["Tour type"] || "",
-      transport: formData["Transport"] || "",
-      site_interests: Array.isArray(formData["Site / Interests"])
-        ? formData["Site / Interests"]
-        : formData["Site / Interests"]
-        ? [formData["Site / Interests"]]
-        : null,
-      other_service: Array.isArray(formData["Other service"])
-        ? (formData["Other service"] as string[]).includes("None")
-          ? ["None"]
+        arrival_flight: formData["Arrival Flight"] || "",
+        departure_flight: formData["Departure Flight"] || "",
+        arrival_date: dates["Arrival Date"]
+          ? dates["Arrival Date"].toISOString()
+          : null,
+        departure_date: dates["Departure Date"]
+          ? dates["Departure Date"].toISOString()
+          : null,
+        no_of_nights: formData["No. of Nights"]
+          ? parseInt(formData["No. of Nights"] as string) || 0
+          : null,
+        hotel_category:
+          formData["Hotel Category"] === "Other"
+            ? `Other: ${formData["Other Hotel Category"]}`
+            : (formData["Hotel Category"] as string) || "",
+        room_type: Array.isArray(formData["Room Selection"])
+          ? JSON.stringify(formData["Room Selection"])
+          : JSON.stringify([]),
+        basis: formData["Basis"] || "",
+        no_of_pax: formData["No of pax"]
+          ? parseInt(formData["No of pax"] as string) || 0
+          : null,
+        children: formData["Children"] || "",
+        tour_type: formData["Tour type"] || "",
+        transport: formData["Transport"] || "",
+        site_interests: Array.isArray(formData["Site / Interests"])
+          ? formData["Site / Interests"]
+          : formData["Site / Interests"]
+          ? [formData["Site / Interests"]]
+          : null,
+        other_service: Array.isArray(formData["Other service"])
+          ? (formData["Other service"] as string[]).includes("None")
+            ? ["None"]
+            : formData["Other service"]
           : formData["Other service"]
-        : formData["Other service"]
-        ? [formData["Other service"]]
-        : ["None"],
-      special_arrangements: formData["Special Arrangements"] || "",
-      special_arrangements_date: dates["Special Arrangements Date"]
-        ? dates["Special Arrangements Date"].toISOString()
-        : null,
-      arrival_flight: formData["Arrival Flight"] || "",
-      departure_flight: formData["Departure Flight"] || "",
-    };
+          ? [formData["Other service"]]
+          : ["None"],
+        special_arrangements: formData["Special Arrangements"] || "",
+        special_arrangements_date: dates["Special Arrangements Date"]
+          ? dates["Special Arrangements Date"].toISOString()
+          : null,
+      };
 
-    // Log the data being sent for debugging
-    console.log("Form data being submitted:", formData);
-    console.log("Dates being submitted:", dates);
-    console.log("Client data for database:", clientData);
+      // List of required fields (update to match your Supabase schema)
+      const requiredFields = [
+        "full_name",
+        "email_address",
+        "contact_number",
+        "nationality",
+        "country",
+        "arrival_date",
+        "departure_date",
+        "no_of_nights",
+        "hotel_category",
+        "room_type",
+        "basis",
+        "no_of_pax",
+        "children",
+        "tour_type",
+        "transport",
+        "site_interests",
+        "other_service",
+        "special_arrangements",
+        // Note: special_arrangements_date is conditionally required, not always required
+      ];
 
-    // List of required fields (update to match your Supabase schema)
-    const requiredFields = [
-      "full_name",
-      "email_address",
-      "contact_number",
-      "arrival_date",
-      "departure_date",
-      // Add more required fields as per your Supabase schema
-    ];
-    // Validate all required fields and set errors
-    const newErrors: Record<string, string> = {};
-    requiredFields.forEach((field) => {
-      if (
-        !clientData[field] ||
-        clientData[field] === "" ||
-        clientData[field] === null
-      ) {
-        const fieldName = field
-          .replace(/_/g, " ")
-          .replace(/\b\w/g, (l) => l.toUpperCase());
-        newErrors[field] = `${fieldName} is required`;
-      }
-    });
-    setErrors(newErrors);
-    if (Object.keys(newErrors).length > 0) {
-      // Don't submit if there are errors
-      return;
-    }
-
-    // Insert the data into Supabase
-    const response = await supabase
-      .from("client_inquiry")
-      .insert([clientData])
-      .select(); // Get the inserted row(s) back
-
-    // Log the full response for debugging
-    // commit
-    console.log("Supabase insert response:", response);
-
-    const { data, error, status, statusText } = response;
-    if (error) {
-      console.error("Error saving client inquiry:", error);
-      alert(
-        `Supabase error: ${
-          error.message || JSON.stringify(error)
-        } (Status: ${status} ${statusText})`
-      );
-    } else if (data && data.length > 0) {
-      console.log("Client inquiry saved successfully:", data);
-      alert("Client inquiry saved successfully!");
-      // Reset form completely
-      setFormData({});
-      setDates({
-        "Arrival Date": null,
-        "Departure Date": null,
-        "Special Arrangements Date": null,
+      // Validate all required fields and set errors
+      const newErrors: Record<string, string> = {};
+      requiredFields.forEach((field) => {
+        if (
+          !clientData[field] ||
+          clientData[field] === "" ||
+          clientData[field] === null
+        ) {
+          const fieldName = field
+            .replace(/_/g, " ")
+            .replace(/\b\w/g, (l) => l.toUpperCase());
+          newErrors[field] = `${fieldName} is required`;
+        }
       });
-      setCurrentSection(0);
-      setHasSubmitted(false);
-      setErrors({});
-    } else {
-      alert("Unknown error: No data returned from Supabase.");
+
+      // Add conditional validation for Special Arrangements Date
+      if (
+        formData["Special Arrangements"] &&
+        formData["Special Arrangements"] !== "None" &&
+        (!clientData["special_arrangements_date"] ||
+          clientData["special_arrangements_date"] === null)
+      ) {
+        newErrors["special_arrangements_date"] =
+          "Special Arrangements Date is required when a special arrangement is selected";
+      }
+
+      setErrors(newErrors);
+
+      if (Object.keys(newErrors).length > 0) {
+        // Don't submit if there are errors
+        return;
+      }
+
+      // Insert the data into Supabase
+      const response = await supabase
+        .from("client_inquiry")
+        .insert([clientData])
+        .select(); // Get the inserted row(s) back
+
+      const { data, error, status, statusText } = response;
+      if (error) {
+        console.error("Error saving client inquiry:", error);
+        alert(
+          `Supabase error: ${
+            error.message || JSON.stringify(error)
+          } (Status: ${status} ${statusText})`
+        );
+      } else if (data && data.length > 0) {
+        alert("Client inquiry saved successfully!");
+        // Reset form completely
+        setFormData({});
+        setDates({
+          "Arrival Date": null,
+          "Departure Date": null,
+          "Special Arrangements Date": null,
+        });
+        setCurrentSection(0);
+        setHasSubmitted(false);
+        setErrors({});
+      } else {
+        alert("Unknown error: No data returned from Supabase.");
+      }
+    } catch (error) {
+      console.error("Error during form submission:", error);
+      alert(`Unexpected error: ${error}`);
     }
   };
 
