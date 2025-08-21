@@ -48,6 +48,9 @@ This system bridges the gap between travel agencies and international customers 
 - **Flight Details**: Optional arrival/departure flight information
 - **Date Management**: Intelligent date selection with night calculation
 - **Accommodation Options**: Flexible hotel categories and room configurations
+- **📄 PDF Reports**: Professional, automated inquiry report generation
+- **📧 Email Integration**: Automatic email delivery to customers and agencies
+- **✅ Success Modal**: Post-submission feedback with download and restart options
 - **Group Management**: Support for travelers of all ages
 - **Experience Customization**: Tour types, transport, and activity preferences
 - **Special Arrangements**: Built-in support for celebrations and events
@@ -140,12 +143,23 @@ npm install
 cp .env.local.example .env.local
 ```
 
-Edit `.env.local` with your Supabase credentials:
+Edit `.env.local` with your Supabase credentials and email configuration:
 
 ```env
+# Supabase Configuration
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# Email Configuration (for PDF email delivery)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+AGENCY_EMAIL=agency@example.com
+NEXT_PUBLIC_AGENCY_EMAIL=agency@example.com
 ```
+
+> **Note**: For Gmail, you'll need to generate an App Password instead of using your regular password. Enable 2FA first, then generate an App Password in your Google Account settings.
 
 4. **Set up the database**
 

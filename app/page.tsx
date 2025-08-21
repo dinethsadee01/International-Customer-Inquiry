@@ -28,6 +28,8 @@ import { Input } from "@/components/ui/input";
 import { differenceInCalendarDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
+import { downloadPDF, generateInquiryPDF } from "@/lib/pdf-generator";
+import SuccessModal from "@/components/ui/success-modal";
 
 type FormData = Record<
   string,
@@ -57,6 +59,8 @@ export default function InquiryForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [currentSection, setCurrentSection] = useState(0);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const sections: FormSection[] = [
     {
@@ -466,10 +470,36 @@ export default function InquiryForm() {
     setErrors((prev) => ({ ...prev, [field]: error }));
   };
 
+  // Handle PDF Download
+  const handleDownloadPDF = () => {
+    const customerName = (formData["Customer Name"] as string) || "customer";
+    const fileName = `serendia-travel-inquiry-${customerName.replace(
+      /\s+/g,
+      "-"
+    )}.pdf`;
+    downloadPDF(formData, dates, fileName);
+  };
+
+  // Handle Start Over
+  const handleStartOver = () => {
+    setShowSuccessModal(false);
+    // Reset form completely
+    setFormData({});
+    setDates({
+      "Arrival Date": null,
+      "Departure Date": null,
+      "Special Arrangements Date": null,
+    });
+    setCurrentSection(0);
+    setHasSubmitted(false);
+    setErrors({});
+  };
+
   // Handle Submit
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setHasSubmitted(true);
+    setIsSubmitting(true);
 
     try {
       // Prepare client data (convert undefined/null to empty string, arrays to comma-separated, objects to JSON)
@@ -576,6 +606,7 @@ export default function InquiryForm() {
 
       if (Object.keys(newErrors).length > 0) {
         // Don't submit if there are errors
+        setIsSubmitting(false);
         return;
       }
 
@@ -593,24 +624,49 @@ export default function InquiryForm() {
             error.message || JSON.stringify(error)
           } (Status: ${status} ${statusText})`
         );
-      } else if (data && data.length > 0) {
-        alert("Client inquiry saved successfully!");
-        // Reset form completely
-        setFormData({});
-        setDates({
-          "Arrival Date": null,
-          "Departure Date": null,
-          "Special Arrangements Date": null,
-        });
-        setCurrentSection(0);
-        setHasSubmitted(false);
-        setErrors({});
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (data && data.length > 0) {
+        // Send email with PDF
+        try {
+          const emailResponse = await fetch("/api/send-inquiry", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              formData,
+              dates,
+              customerEmail: formData["Customer Email"],
+              agencyEmail:
+                process.env.NEXT_PUBLIC_AGENCY_EMAIL ||
+                "dineth.20212183@iit.ac.lk",
+            }),
+          });
+
+          if (!emailResponse.ok) {
+            throw new Error("Failed to send email");
+          }
+
+          // Show success modal instead of alert
+          setShowSuccessModal(true);
+        } catch (emailError) {
+          console.error("Error sending email:", emailError);
+          // Still show success for database save, but mention email issue
+          alert(
+            "Inquiry saved successfully, but there was an issue sending the email. We'll contact you directly."
+          );
+        }
       } else {
         alert("Unknown error: No data returned from Supabase.");
       }
     } catch (error) {
       console.error("Error during form submission:", error);
       alert(`Unexpected error: ${error}`);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1280,6 +1336,15 @@ export default function InquiryForm() {
           </form>
         </main>
       </div>
+
+      {/* Success Modal */}
+      <SuccessModal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        onDownloadPDF={handleDownloadPDF}
+        onStartOver={handleStartOver}
+        customerName={(formData["Customer Name"] as string) || ""}
+      />
     </div>
   );
 }
