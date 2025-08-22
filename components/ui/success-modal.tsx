@@ -14,7 +14,6 @@ interface SuccessModalProps {
 
 export default function SuccessModal({
   isOpen,
-  onClose,
   onDownloadPDF,
   onStartOver,
   customerName,

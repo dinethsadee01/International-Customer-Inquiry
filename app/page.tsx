@@ -14,6 +14,7 @@ import {
   Car,
   Sparkles,
   Save,
+  Loader2,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,7 @@ import { Input } from "@/components/ui/input";
 import { differenceInCalendarDays } from "date-fns";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/lib/supabase";
-import { downloadPDF, generateInquiryPDF } from "@/lib/pdf-generator";
+import { downloadHTMLPDF } from "@/lib/pdf-generator";
 import SuccessModal from "@/components/ui/success-modal";
 
 type FormData = Record<
@@ -473,11 +474,17 @@ export default function InquiryForm() {
   // Handle PDF Download
   const handleDownloadPDF = () => {
     const customerName = (formData["Customer Name"] as string) || "customer";
-    const fileName = `serendia-travel-inquiry-${customerName.replace(
+    const fileName = `Serendia-Travel-Inquiry-${customerName.replace(
       /\s+/g,
       "-"
     )}.pdf`;
-    downloadPDF(formData, dates, fileName);
+
+    try {
+      downloadHTMLPDF(formData, dates, fileName);
+    } catch (error) {
+      console.error("Error downloading PDF:", error);
+      alert("Error generating PDF. Please try again.");
+    }
   };
 
   // Handle Start Over
@@ -722,7 +729,7 @@ export default function InquiryForm() {
           <h1 className="text-4xl md:text-5xl font-bold text-gray-800 mb-2">
             Plan Your Perfect Trip
           </h1>
-          <p className="text-gray-600 text-lg">
+          <p className="text-gray-600 text-lg mb-4">
             Let's create an amazing travel experience tailored just for you.
           </p>
         </header>
@@ -740,6 +747,7 @@ export default function InquiryForm() {
                         : ""
                     }`}
                     onClick={() => setCurrentSection(index)}
+                    disabled={isSubmitting}
                   >
                     {section.icon}
                   </Button>
@@ -1297,7 +1305,7 @@ export default function InquiryForm() {
                 onClick={() =>
                   setCurrentSection(Math.max(0, currentSection - 1))
                 }
-                disabled={currentSection === 0}
+                disabled={currentSection === 0 || isSubmitting}
               >
                 Previous
               </Button>
@@ -1307,6 +1315,7 @@ export default function InquiryForm() {
                   type="button"
                   variant="outline"
                   onClick={handleClearSection}
+                  disabled={isSubmitting}
                 >
                   Clear
                 </Button>
@@ -1318,6 +1327,7 @@ export default function InquiryForm() {
                         Math.min(sections.length - 1, currentSection + 1)
                       )
                     }
+                    disabled={isSubmitting}
                   >
                     Next
                   </Button>
@@ -1325,10 +1335,19 @@ export default function InquiryForm() {
                   <Button
                     type="submit"
                     className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
-                    disabled={!isFormValid()}
+                    disabled={!isFormValid() || isSubmitting}
                   >
-                    <Save className="mr-2 h-4 w-4" />
-                    Submit Inquiry
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="mr-2 h-8 w-8" />
+                        Submit Inquiry
+                      </>
+                    )}
                   </Button>
                 )}
               </div>
@@ -1345,6 +1364,22 @@ export default function InquiryForm() {
         onStartOver={handleStartOver}
         customerName={(formData["Customer Name"] as string) || ""}
       />
+
+      {/* Loading Overlay */}
+      {isSubmitting && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-sm mx-4 text-center shadow-xl">
+            <Loader2 className="w-8 h-8 animate-spin text-green-600 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-800 mb-2">
+              Processing Your Inquiry
+            </h3>
+            <p className="text-gray-600 text-sm">
+              Please wait while we save your information and send confirmation
+              emails...
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

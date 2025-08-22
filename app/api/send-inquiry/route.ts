@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import nodemailer from "nodemailer";
-import { generateInquiryPDF } from "@/lib/pdf-generator";
+import { generateInquiryPDFFromHTML } from "@/lib/html-pdf-generator";
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,10 +44,9 @@ export async function POST(request: NextRequest) {
     await transporter.verify();
     console.log("✅ SMTP connection verified successfully");
 
-    // Generate PDF
-    console.log("📄 Generating PDF...");
-    const pdf = generateInquiryPDF(formData, dates);
-    const pdfBuffer = Buffer.from(pdf.output("arraybuffer"));
+    // Generate PDF using HTML-based method
+    console.log("📄 Generating PDF with HTML template...");
+    const pdfBuffer = await generateInquiryPDFFromHTML(formData, dates);
     console.log("✅ PDF generated successfully");
 
     // Email to travel agency
