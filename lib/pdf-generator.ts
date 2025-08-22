@@ -1,5 +1,3 @@
-import { generateInquiryPDFFromHTML } from "./html-pdf-generator";
-
 interface FormData {
   [key: string]: any;
 }
@@ -9,7 +7,7 @@ interface Dates {
 }
 
 /**
- * Downloads a PDF file using HTML-based generation
+ * Downloads a PDF file using HTML-based generation via API call
  */
 export const downloadHTMLPDF = async (
   formData: FormData,
@@ -17,13 +15,22 @@ export const downloadHTMLPDF = async (
   fileName: string = "serendia-travel-inquiry.pdf"
 ): Promise<void> => {
   try {
-    // Generate PDF directly using the HTML generator
-    const pdfBuffer = await generateInquiryPDFFromHTML(formData, dates);
-    
-    // Convert Buffer to Uint8Array for Blob compatibility
-    const uint8Array = new Uint8Array(pdfBuffer);
-    const blob = new Blob([uint8Array], { type: "application/pdf" });
-    
+    // Call the server-side API to generate PDF
+    const response = await fetch("/api/download-pdf", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ formData, dates }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to generate PDF: ${response.statusText}`);
+    }
+
+    // Get the PDF blob from the response
+    const blob = await response.blob();
+
     // Create download link
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
