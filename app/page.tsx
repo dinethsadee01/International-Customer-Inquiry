@@ -62,6 +62,7 @@ export default function InquiryForm() {
   const [hasSubmitted, setHasSubmitted] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const sections: FormSection[] = [
     {
@@ -472,24 +473,28 @@ export default function InquiryForm() {
   };
 
   // Handle PDF Download
-  const handleDownloadPDF = () => {
+  const handleDownloadPDF = async () => {
     const customerName = (formData["Customer Name"] as string) || "customer";
     const fileName = `Serendia-Travel-Inquiry-${customerName.replace(
       /\s+/g,
       "-"
     )}.pdf`;
 
+    setIsDownloading(true);
     try {
-      downloadHTMLPDF(formData, dates, fileName);
+      await downloadHTMLPDF(formData, dates, fileName);
     } catch (error) {
       console.error("Error downloading PDF:", error);
       alert("Error generating PDF. Please try again.");
+    } finally {
+      setIsDownloading(false);
     }
   };
 
   // Handle Start Over
   const handleStartOver = () => {
     setShowSuccessModal(false);
+    setIsDownloading(false);
     // Reset form completely
     setFormData({});
     setDates({
@@ -1334,7 +1339,7 @@ export default function InquiryForm() {
                 ) : (
                   <Button
                     type="submit"
-                    className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700"
+                    className="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700"
                     disabled={!isFormValid() || isSubmitting}
                   >
                     {isSubmitting ? (
@@ -1363,6 +1368,7 @@ export default function InquiryForm() {
         onDownloadPDF={handleDownloadPDF}
         onStartOver={handleStartOver}
         customerName={(formData["Customer Name"] as string) || ""}
+        isDownloading={isDownloading}
       />
 
       {/* Loading Overlay */}

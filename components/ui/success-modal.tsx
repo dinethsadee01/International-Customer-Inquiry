@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { CheckCircle, Download, RotateCcw, X } from "lucide-react";
+import { CheckCircle, Download, RotateCcw, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -10,6 +10,7 @@ interface SuccessModalProps {
   onDownloadPDF: () => void;
   onStartOver: () => void;
   customerName: string;
+  isDownloading?: boolean;
 }
 
 export default function SuccessModal({
@@ -17,6 +18,7 @@ export default function SuccessModal({
   onDownloadPDF,
   onStartOver,
   customerName,
+  isDownloading = false,
 }: SuccessModalProps) {
   if (!isOpen) return null;
 
@@ -113,11 +115,21 @@ export default function SuccessModal({
                 >
                   <Button
                     onClick={onDownloadPDF}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-medium"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 text-base font-medium disabled:opacity-50 disabled:cursor-not-allowed"
                     size="lg"
+                    disabled={isDownloading}
                   >
-                    <Download className="mr-2 h-5 w-5" />
-                    Download Inquiry PDF
+                    {isDownloading ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Generating PDF...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="mr-2 h-5 w-5" />
+                        Download Inquiry PDF
+                      </>
+                    )}
                   </Button>
 
                   <Button

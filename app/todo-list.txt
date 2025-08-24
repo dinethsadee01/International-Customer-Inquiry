@@ -1,0 +1,8 @@
+1. Update company email, number, website in : 
+- .env.local
+- readme.md
+- travel-inquiry-template.html (footer)
+- route.ts (email html) 
+
+2. Update company branding issue in:
+- route.ts (email html)
